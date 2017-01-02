@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+var Neodoc = require("neodoc")
+var VERSION = require("../package").version
+var AUTHOR_NAME = require("../package").author.name
+var AUTHOR_EMAIL = require("../package").author.email
+
+var USAGE_TEXT = `
+Usage: hugml [options] [<xml-file>|-]
+
+Options:
+    -h, --help           Display this help and exit.
+    -V, --version        Display version and exit.
+
+For more help or to give feedback, please contact ${AUTHOR_EMAIL}.
+`
+
+var VERSION_TEXT = `
+Hugml v${VERSION}
+Copyright (c) 2016– ${AUTHOR_NAME} <${AUTHOR_EMAIL}>
+For more help or to give feedback, please contact ${AUTHOR_EMAIL}.
+`
+
+var args = Neodoc.run(USAGE_TEXT)
+if (args["--help"]) return void process.stdout.write(USAGE_TEXT.trimLeft())
+if (args["--version"]) return void process.stdout.write(VERSION_TEXT.trimLeft())
+
+var Fs = require("fs")
+var Hugml = require("../")
+var concatStream = require("concat-stream")
+
+var path
+if (args["-"]) path = "-"
+else if ("<xml-file>" in args) path = args["<xml-file>"]
+else path = "-"
+
+var stream = path == "-" ? process.stdin : Fs.createReadStream(path)
+
+stream.setEncoding("utf8").pipe(concatStream(function(source) {
+  var obj = Hugml.parse(source)
+  console.log(JSON.stringify(obj, null, "\t"))
+}))
+
+stream.on("error", function(err) {
+  console.error("jadexify: %s", err)
+  process.exit(1)
+})
