@@ -41,6 +41,6 @@ stream.setEncoding("utf8").pipe(concatStream(function(source) {
 }))
 
 stream.on("error", function(err) {
-	console.error("jadexify: %s", err)
+	console.error("hugml: %s", err)
 	process.exitCode = 1
 })
