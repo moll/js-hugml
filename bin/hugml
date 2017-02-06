@@ -42,5 +42,5 @@ stream.setEncoding("utf8").pipe(concatStream(function(source) {
 
 stream.on("error", function(err) {
 	console.error("jadexify: %s", err)
-	process.exit(1)
+	process.exitCode = 1
 })
