@@ -20,7 +20,7 @@ Copyright (c) 2016– ${AUTHOR_NAME} <${AUTHOR_EMAIL}>
 For more help or to give feedback, please contact ${AUTHOR_EMAIL}.
 `
 
-var args = Neodoc.run(USAGE_TEXT)
+var args = Neodoc.run(USAGE_TEXT, {versionFlags: []})
 if (args["--help"]) return void process.stdout.write(USAGE_TEXT.trimLeft())
 if (args["--version"]) return void process.stdout.write(VERSION_TEXT.trimLeft())
 
