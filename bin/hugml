@@ -36,11 +36,11 @@ else path = "-"
 var stream = path == "-" ? process.stdin : Fs.createReadStream(path)
 
 stream.setEncoding("utf8").pipe(concatStream(function(source) {
-  var obj = Hugml.parse(source)
-  console.log(JSON.stringify(obj, null, "\t"))
+	var obj = Hugml.parse(source)
+	console.log(JSON.stringify(obj, null, "\t"))
 }))
 
 stream.on("error", function(err) {
-  console.error("jadexify: %s", err)
-  process.exit(1)
+	console.error("jadexify: %s", err)
+	process.exit(1)
 })
