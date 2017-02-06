@@ -3,7 +3,7 @@ root = true
 [Makefile]
 indent_style = tab
 
-[*.js]
+[*.js,bin/*]
 indent_style = tab
 
 [*.json]
