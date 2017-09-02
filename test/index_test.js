@@ -150,11 +150,11 @@ describe("Hugml", function() {
 					xmlns:caldav="urn:ietf:params:xml:ns:caldav">
 
 					<response>
-            <c:getctag>42</c:getctag>
+						<c:getctag>42</c:getctag>
 
-            <caldav:supported-calendar-component-set>
-              <caldav:comp name="VEVENT" />
-            </caldav:supported-calendar-component-set>
+						<caldav:supported-calendar-component-set>
+							<caldav:comp name="VEVENT" />
+						</caldav:supported-calendar-component-set>
 					</response>
 				</multistatus>
 			`)
