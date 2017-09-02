@@ -5,11 +5,15 @@ var AUTHOR_NAME = require("../package").author.name
 var AUTHOR_EMAIL = require("../package").author.email
 
 var USAGE_TEXT = `
-Usage: hugml [options] [<xml-file>|-]
+Usage: hugml [options] [--namespace=URI...] [<xml-file>|-]
 
 Options:
     -h, --help           Display this help and exit.
     -V, --version        Display version and exit.
+    -n, --namespace=URI  Set a namespace alias in URI=ALIAS format.
+
+Example:
+    hugml --namespace=urn:example=eg foo.xml
 
 For more help or to give feedback, please contact ${AUTHOR_EMAIL}.
 `
@@ -27,6 +31,15 @@ if (args["--version"]) return void process.stdout.write(VERSION_TEXT.trimLeft())
 var Fs = require("fs")
 var Hugml = require("../")
 var concatStream = require("concat-stream")
+var namespaces = args["--namespace"]
+
+var hugml
+if (namespaces) hugml = new Hugml(namespaces.reduce(function(aliases, alias) {
+	var uriAndName = alias.split("=")
+	aliases[uriAndName[0]] = uriAndName[1] || ""
+	return aliases
+}, {}))
+else hugml = Hugml.prototype
 
 var path
 if (args["-"]) path = "-"
@@ -36,7 +49,7 @@ else path = "-"
 var stream = path == "-" ? process.stdin : Fs.createReadStream(path)
 
 stream.setEncoding("utf8").pipe(concatStream(function(source) {
-	var obj = Hugml.parse(source)
+	var obj = hugml.parse(source)
 	console.log(JSON.stringify(obj, null, "\t"))
 }))
 
