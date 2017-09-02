@@ -47,7 +47,7 @@ function render(xml, tagName, tag) {
 }
 
 function getNamespaces(tagName, tag) {
-	return Object.keys(traverseTag(function(seen, tagName, tag) {
+	return Object.keys(traverseTag(function(seen, tagName, _tag) {
 		var namespace = tagName.substring(0, tagName.indexOf(NAMESPACE_SEP))
 		seen[namespace] = true
 		return seen

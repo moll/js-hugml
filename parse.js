@@ -69,7 +69,7 @@ Parser.prototype.ontext = function(text) {
 	last(this.stack)[TEXT_ATTR] = text
 }
 
-Parser.prototype.onclosetag = function(tag) {
+Parser.prototype.onclosetag = function(_tag) {
 	this.stack.pop()
 }
 
