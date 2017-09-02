@@ -7,7 +7,7 @@ module.exports = function tabout(strings) {
 	})
 
 	var indent
-	string = string.replace(/^([ \t]+)/gm, function(match, space) {
+	string = string.replace(/^([ \t]+)/gm, function(_match, space) {
 		if (indent == null) indent = new RegExp("^[ \t]{1," + space.length + "}")
 		return space.replace(indent, "")
 	})
