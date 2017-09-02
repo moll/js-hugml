@@ -59,6 +59,28 @@ describe("Hugml", function() {
 			})
 		})
 
+		it("must parse XML when attribute and tag collides", function() {
+			var obj = new Hugml().parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<html>
+					<head title="Collides with title tag">
+						<title>Page</title>
+					</head>
+				</html>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+
+				html: {
+					head: {
+						title: {$: "Page"}
+					}
+				}
+			})
+		})
+
 		it("must parse self-closed tags with no attributes", function() {
 			var obj = new Hugml().parse(outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>
@@ -224,6 +246,30 @@ describe("Hugml", function() {
 				propfind: {
 					"xmlns:dav": "DAV:",
 					prop: {"xml$unknown": {xmlns: ""}}
+				}
+			})
+		})
+
+		it("must parse XML when attribute and tag collides but tag namespaced",
+			function() {
+			var obj = new Hugml({"": "h"}).parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<html>
+					<head title="Collides with title tag">
+						<title>Page</title>
+					</head>
+				</html>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+
+				h$html: {
+					h$head: {
+						title: "Collides with title tag",
+						h$title: {$: "Page"}
+					}
 				}
 			})
 		})

@@ -59,7 +59,7 @@ Parser.prototype.onopentag = function(tag) {
 
 	var parent = last(this.stack)
 	if (name in parent && isArray(parent[name])) parent[name].push(attrs)
-	else if (name in parent) parent[name] = [parent[name], attrs]
+	else if (typeof parent[name] == "object") parent[name] = [parent[name], attrs]
 	else parent[name] = attrs
 
 	this.stack.push(attrs)
