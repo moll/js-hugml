@@ -39,7 +39,7 @@ Parser.prototype.name = function(tag) {
 	if (alias != null) return alias + NAMESPACE_SEP + tag.local
 
 	// Alternative default namespace would be the "xml" namespace.
-	if (tag.prefix === "" && this.unscoped) return NAMESPACE_SEP + tag.name
+	if (tag.prefix === "" && this.unscoped) return ":" + tag.name
 	return tag.name
 }
 

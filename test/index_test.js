@@ -176,7 +176,7 @@ describe("Hugml", function() {
 
 				propfind: {
 					"xmlns:dav": "DAV:",
-					prop: {"current-user-principal": {}, "$unknown": {}}
+					prop: {"current-user-principal": {}, ":unknown": {}}
 				}
 			})
 		})
@@ -378,6 +378,21 @@ describe("Hugml", function() {
 			`)
 		})
 
+		xit("must throw error given unknown namespace", function() {
+			var hugml = new Hugml({"DAV:": "dav"})
+
+			var err
+			try {
+				hugml.stringify({
+					version: "1.0",
+					encoding: "UTF-8",
+					dav$propfind: {gol$prop: {}}
+				})
+			}
+			catch (ex) { err = ex }
+			err.must.be.an.error(/unknown namespace/i)
+		})
+
 		it("must stringify XML with only used namespaces", function() {
 			var hugml = new Hugml({
 				"DAV:": "",
@@ -404,13 +419,28 @@ describe("Hugml", function() {
 			`)
 		})
 
+		xit("must throw error given $tag without default namespace", function() {
+			var hugml = new Hugml({"DAV:": ""})
+
+			var err
+			try {
+				hugml.stringify({
+					version: "1.0",
+					encoding: "UTF-8",
+					propfind: {prop: {"current-user-principal": {}, "$unknown": {}}}
+				})
+			}
+			catch (ex) { err = ex }
+			err.must.be.an.error(/unknown namespace/i)
+		})
+
 		it("must stringify XML given default namespace", function() {
 			var hugml = new Hugml({"DAV:": ""})
 
 			var obj = hugml.stringify({
 				version: "1.0",
 				encoding: "UTF-8",
-				propfind: {prop: {"current-user-principal": {}, "$unknown": {}}}
+				propfind: {prop: {"current-user-principal": {}, ":unknown": {}}}
 			})
 
 			obj.must.eql(outdent`
