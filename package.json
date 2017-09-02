@@ -1,8 +1,8 @@
 {
 	"name": "@moll/hugml",
 	"version": "0.1.338",
-	"description": "",
-	"keywords": [],
+	"description": "An XML parsing and serializing library based on Google's GDATA and BadgerFish conventions. Supports namespaces.",
+	"keywords": ["xml", "gdata", "badgerfish"],
 	"homepage": "https://github.com/moll/js-hugml",
 	"bugs": "https://github.com/moll/js-hugml/issues",
 
