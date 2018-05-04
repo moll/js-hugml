@@ -542,6 +542,19 @@ describe("Hugml", function() {
 				<person sex="male"/>
 			`)
 		})
+
+		// https://github.com/oozcitak/xmlbuilder-js/issues/147
+		it("must stringify emoji text", function() {
+			var obj = new Hugml().stringify({
+				version: "1.0",
+				emoji: {$: "💩"}
+			})
+
+			obj.must.eql(outdent`
+				<?xml version="1.0" encoding="UTF-8"?>
+				<emoji>💩</emoji>
+			`)
+		})
 	})
 
 	describe(".parse", function() {
