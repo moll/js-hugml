@@ -294,6 +294,20 @@ describe("Hugml", function() {
 			})
 		})
 
+		// https://github.com/oozcitak/xmlbuilder-js/issues/147
+		it("must parse XML with emoji", function() {
+			var obj = new Hugml().parse(outdent`
+				<?xml version="1.0" encoding="UTF-8"?>
+				<emoji>💩</emoji>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+				emoji: {$: "💩"}
+			})
+		})
+
 		it("must throw error given unbound namespace", function() {
 			var xml = outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>
