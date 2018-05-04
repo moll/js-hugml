@@ -1,4 +1,4 @@
-## Unreleased
+## 1.0.1 (May 4, 2018)
 - Upgrades [Xmlbuilder.js](https://www.npmjs.com/package/xmlbuilder) to v10 to [fix stringifying emoji](https://github.com/oozcitak/xmlbuilder-js/issues/147).
 
 ## 1.0.0 (Sep 2, 2017)
