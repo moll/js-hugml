@@ -17,6 +17,9 @@ autotest:
 autospec:
 	@$(NODE) $(NODE_OPTS) ./node_modules/.bin/_mocha -R spec --watch $(TEST_OPTS)
 
+shrinkwrap:
+	npm shrinkwrap --dev
+
 pack:
 	@file=$$(npm pack); echo "$$file"; tar tf "$$file"
 
@@ -32,5 +35,6 @@ clean:
 
 .PHONY: love
 .PHONY: test spec autotest autospec
+.PHONY: shrinkwrap
 .PHONY: pack publish tag
 .PHONY: clean
