@@ -607,7 +607,7 @@ describe("Hugml", function() {
 			`)
 		})
 
-		xit("must throw error given unknown namespace", function() {
+		it("must throw error given unknown namespace", function() {
 			var hugml = new Hugml({"DAV:": "dav"})
 
 			var err
@@ -616,21 +616,6 @@ describe("Hugml", function() {
 					version: "1.0",
 					encoding: "UTF-8",
 					dav$propfind: {gol$prop: {}}
-				})
-			}
-			catch (ex) { err = ex }
-			err.must.be.an.error(/unknown namespace/i)
-		})
-
-		xit("must throw error given $tag without default namespace", function() {
-			var hugml = new Hugml({"DAV:": ""})
-
-			var err
-			try {
-				hugml.stringify({
-					version: "1.0",
-					encoding: "UTF-8",
-					propfind: {prop: {"current-user-principal": {}, "$unknown": {}}}
 				})
 			}
 			catch (ex) { err = ex }

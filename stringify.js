@@ -22,7 +22,7 @@ module.exports = function(namespaces, obj) {
 
 	if (namespaces) O.keys(elAndUsedAliases[1]).forEach(function(alias) {
 		var uri = namespaces[alias]
-		if (uri == null) return
+		if (uri == null) throw new Error("Unknown namespace alias: " + alias)
 		el.attribute(xmlnsify(alias), uri)
 	})
 
