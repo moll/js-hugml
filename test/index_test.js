@@ -297,7 +297,7 @@ describe("Hugml", function() {
 		// https://github.com/oozcitak/xmlbuilder-js/issues/147
 		it("must parse XML with emoji", function() {
 			var obj = new Hugml().parse(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<emoji>💩</emoji>
 			`)
 
@@ -344,7 +344,7 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<person sex="male">
 					<name>John</name>
 					<age>13</age>
@@ -371,7 +371,7 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<people>
 					<person sex="male">
 						<name>John</name>
@@ -393,8 +393,8 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
-				<person/>
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<person />
 			`)
 		})
 
@@ -410,10 +410,10 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<dav:propfind xmlns:dav="DAV:">
 					<dav:prop>
-						<dav:current-user-principal/>
+						<dav:current-user-principal />
 					</dav:prop>
 				</dav:propfind>
 			`)
@@ -429,10 +429,10 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<dav:propfind xmlns:dav="DAV:">
 					<dav:prop>
-						<dav:current-user-principal/>
+						<dav:current-user-principal />
 					</dav:prop>
 				</dav:propfind>
 			`)
@@ -470,7 +470,7 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<multistatus xmlns="DAV:" xmlns:calsrv="http://calendarserver.org/ns/">
 					<response>
 						<calsrv:getctag>42</calsrv:getctag>
@@ -504,11 +504,11 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<propfind xmlns="DAV:">
 					<prop>
-						<current-user-principal/>
-						<unknown xmlns=""/>
+						<current-user-principal />
+						<unknown xmlns="" />
 					</prop>
 				</propfind>
 			`)
@@ -524,10 +524,10 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<propfind xmlns="DAV:" xmlns:xml="">
 					<prop>
-						<xml:unknown/>
+						<xml:unknown />
 					</prop>
 				</propfind>
 			`)
@@ -540,8 +540,8 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
-				<person sex="male"/>
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<person sex="male" />
 			`)
 		})
 
@@ -552,8 +552,8 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
-				<person sex="male"/>
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<person sex="male" />
 			`)
 		})
 
@@ -565,7 +565,7 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<emoji>💩</emoji>
 			`)
 		})
@@ -617,7 +617,7 @@ describe("Hugml", function() {
 			})
 
 			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8"?>
+				<?xml version="1.0" encoding="UTF-8" ?>
 				<person sex="male">
 					<name>John</name>
 					<age>13</age>

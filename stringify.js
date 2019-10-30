@@ -25,7 +25,7 @@ module.exports = function(namespaces, obj) {
 	}
 
 	var el = render(xml, tagName, tag)
-	return el.end({pretty: true, indent: "\t"})
+	return el.end({pretty: true, indent: "\t", spacebeforeslash: " "})
 }
 
 function render(xml, tagName, tag) {

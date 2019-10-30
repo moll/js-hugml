@@ -186,7 +186,7 @@ The general algorithm for converting between XML and JSON is as follows:
 
 1. All **XML** is returned as an object with the XML pragma's attributes as properties of it:
    ```xml
-   <?xml version="1.0" encoding="UTF-8"?>
+   <?xml version="1.0" encoding="UTF-8" ?>
    ```
 
    Parses to:
