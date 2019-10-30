@@ -33,7 +33,7 @@ Parser.prototype.parse = function(xml) {
 	return this.stack[0]
 }
 
-Parser.prototype.name = function(tag) {
+Parser.prototype.nameTag = function(tag) {
 	var alias = this.namespaces[tag.uri]
 	if (alias === "") return tag.local
 	if (alias != null) return alias + NAMESPACE_SEP + tag.local
@@ -41,6 +41,14 @@ Parser.prototype.name = function(tag) {
 	// Alternative default namespace would be the "xml" namespace.
 	if (tag.prefix === "" && this.unscoped) return ":" + tag.name
 	return tag.name
+}
+
+Parser.prototype.nameAttribute = function(attr) {
+	if (attr.uri === "") return attr.local
+	var alias = this.namespaces[attr.uri]
+	if (alias === "") return attr.local
+	if (alias != null) return alias + NAMESPACE_SEP + attr.local
+	return attr.name
 }
 
 Parser.prototype.onprocessinginstruction = function(xml) {
@@ -51,9 +59,11 @@ Parser.prototype.onprocessinginstruction = function(xml) {
 }
 
 Parser.prototype.onopentag = function(tag) {
-	var name = this.name(tag)
-	var attrs = reduce(function(attrs, attr, name) {
-		attrs[name] = attr.value
+	var self = this
+	var name = this.nameTag(tag)
+
+	var attrs = reduce(function(attrs, attr) {
+		attrs[self.nameAttribute(attr)] = attr.value
 		return attrs
 	}, {}, tag.attributes)
 

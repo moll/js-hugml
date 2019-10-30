@@ -1,5 +1,6 @@
 var Hugml = require("..")
 var outdent = require("./outdent")
+var MANIFEST_URN = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"
 
 describe("Hugml", function() {
 	describe(".prototype.parse", function() {
@@ -115,6 +116,25 @@ describe("Hugml", function() {
 			})
 		})
 
+		it("must parse XML with namespaced attribute", function() {
+			var obj = new Hugml().parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<manifest:manifest xmlns:manifest="${MANIFEST_URN}">
+					<manifest:file-entry manifest:full-path="/" />
+				</manifest:manifest>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+
+				"manifest:manifest": {
+					"xmlns:manifest": MANIFEST_URN,
+					"manifest:file-entry": {"manifest:full-path": "/"}
+				}
+			})
+		})
+
 		it("must parse XML given renamed namespace", function() {
 			var hugml = new Hugml({"DAV:": "dav"})
 
@@ -134,6 +154,26 @@ describe("Hugml", function() {
 				dav$propfind: {
 					xmlns: "DAV:",
 					dav$prop: {"dav$current-user-principal": {}}
+				}
+			})
+		})
+
+		it("must parse XML given renamed namespaced attribute", function() {
+			var hugml = new Hugml({[MANIFEST_URN]: "m"})
+
+			var obj = hugml.parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<manifest:manifest xmlns:manifest="${MANIFEST_URN}">
+					<manifest:file-entry manifest:full-path="/" />
+				</manifest:manifest>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+				m$manifest: {
+					"xmlns:manifest": MANIFEST_URN,
+					"m$file-entry": {"m$full-path": "/"}
 				}
 			})
 		})
@@ -222,6 +262,29 @@ describe("Hugml", function() {
 				propfind: {
 					"xmlns:dav": "DAV:",
 					prop: {"xml$unknown": {}}
+				}
+			})
+		})
+
+		it("must parse XML given renamed default namespaced attribute", function() {
+			var hugml = new Hugml({[MANIFEST_URN]: "", "": "xml"})
+
+			var obj = hugml.parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<manifest:manifest xmlns:manifest="${MANIFEST_URN}">
+					<manifest:file-entry manifest:full-path="/" />
+					<unknown full-path="foo" />
+				</manifest:manifest>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+
+				manifest: {
+					"xmlns:manifest": MANIFEST_URN,
+					"file-entry": {"full-path": "/"},
+					xml$unknown: {"full-path": "foo"}
 				}
 			})
 		})
@@ -438,60 +501,21 @@ describe("Hugml", function() {
 			`)
 		})
 
-		xit("must throw error given unknown namespace", function() {
-			var hugml = new Hugml({"DAV:": "dav"})
-
-			var err
-			try {
-				hugml.stringify({
-					version: "1.0",
-					encoding: "UTF-8",
-					dav$propfind: {gol$prop: {}}
-				})
-			}
-			catch (ex) { err = ex }
-			err.must.be.an.error(/unknown namespace/i)
-		})
-
-		it("must stringify XML with only used namespaces", function() {
-			var hugml = new Hugml({
-				"DAV:": "",
-				"urn:ietf:params:xml:ns:caldav": "caldav",
-				"http://calendarserver.org/ns/": "calsrv",
-			})
+		it("must stringify XML given namespaced attribute", function() {
+			var hugml = new Hugml({[MANIFEST_URN]: "m"})
 
 			var obj = hugml.stringify({
 				version: "1.0",
 				encoding: "UTF-8",
-
-				multistatus: {
-					response: {"calsrv$getctag": {"$": "42"}}
-				}
+				m$manifest: {"m$file-entry": {"m$full-path": "/"}}
 			})
 
 			obj.must.eql(outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>
-				<multistatus xmlns="DAV:" xmlns:calsrv="http://calendarserver.org/ns/">
-					<response>
-						<calsrv:getctag>42</calsrv:getctag>
-					</response>
-				</multistatus>
+				<m:manifest xmlns:m="${MANIFEST_URN}">
+					<m:file-entry m:full-path="/" />
+				</m:manifest>
 			`)
-		})
-
-		xit("must throw error given $tag without default namespace", function() {
-			var hugml = new Hugml({"DAV:": ""})
-
-			var err
-			try {
-				hugml.stringify({
-					version: "1.0",
-					encoding: "UTF-8",
-					propfind: {prop: {"current-user-principal": {}, "$unknown": {}}}
-				})
-			}
-			catch (ex) { err = ex }
-			err.must.be.an.error(/unknown namespace/i)
 		})
 
 		it("must stringify XML given default namespace", function() {
@@ -531,6 +555,86 @@ describe("Hugml", function() {
 					</prop>
 				</propfind>
 			`)
+		})
+
+		it("must stringify XML with only used namespaces", function() {
+			var hugml = new Hugml({
+				"DAV:": "",
+				"urn:ietf:params:xml:ns:caldav": "caldav",
+				"http://calendarserver.org/ns/": "calsrv",
+			})
+
+			var obj = hugml.stringify({
+				version: "1.0",
+				encoding: "UTF-8",
+
+				multistatus: {
+					response: {"calsrv$getctag": {"$": "42"}}
+				}
+			})
+
+			obj.must.eql(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<multistatus xmlns="DAV:" xmlns:calsrv="http://calendarserver.org/ns/">
+					<response>
+						<calsrv:getctag>42</calsrv:getctag>
+					</response>
+				</multistatus>
+			`)
+		})
+
+		it("must stringify XML with only used attribute namespaces", function() {
+			var hugml = new Hugml({
+				"DAV:": "",
+				"urn:ietf:params:xml:ns:caldav": "caldav",
+				"http://calendarserver.org/ns/": "calsrv",
+			})
+
+			var obj = hugml.stringify({
+				version: "1.0",
+				encoding: "UTF-8",
+
+				multistatus: {
+					response: {"calsrv$getctag": "42"}
+				}
+			})
+
+			obj.must.eql(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<multistatus xmlns="DAV:" xmlns:calsrv="http://calendarserver.org/ns/">
+					<response calsrv:getctag="42" />
+				</multistatus>
+			`)
+		})
+
+		xit("must throw error given unknown namespace", function() {
+			var hugml = new Hugml({"DAV:": "dav"})
+
+			var err
+			try {
+				hugml.stringify({
+					version: "1.0",
+					encoding: "UTF-8",
+					dav$propfind: {gol$prop: {}}
+				})
+			}
+			catch (ex) { err = ex }
+			err.must.be.an.error(/unknown namespace/i)
+		})
+
+		xit("must throw error given $tag without default namespace", function() {
+			var hugml = new Hugml({"DAV:": ""})
+
+			var err
+			try {
+				hugml.stringify({
+					version: "1.0",
+					encoding: "UTF-8",
+					propfind: {prop: {"current-user-principal": {}, "$unknown": {}}}
+				})
+			}
+			catch (ex) { err = ex }
+			err.must.be.an.error(/unknown namespace/i)
 		})
 
 		it("must stringify with version 1.0 by default", function() {

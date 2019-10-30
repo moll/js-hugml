@@ -1,12 +1,10 @@
 var O = require("oolong")
 var beginXml = require("xmlbuilder").begin
 var findKey = require("./lib").findKey
-var get = require("./lib").get
-var reduce = require("./lib").reduce
 var isArray = Array.isArray
 var TEXT = "$"
-var NAMESPACE_SEP = "$"
 
+// The aliases argument takes an object from alias to namespace URI.
 module.exports = function(namespaces, obj) {
 	var xml = beginXml()
 	xml.declaration(obj.version, obj.encoding || "UTF-8")
@@ -19,52 +17,53 @@ module.exports = function(namespaces, obj) {
 	var tagName = findKey(isElement, obj)
 	var tag = obj[tagName]
 
-	if (namespaces) {
-		var seen = O.object(getNamespaces(tagName, tag), get.bind(null, namespaces))
-		tag = O.create(tag, O.mapKeys(seen, xmlnsify))
-	}
+	var elAndUsedAliases = render(xml, tagName, tag)
+	var el = elAndUsedAliases[0]
 
-	var el = render(xml, tagName, tag)
+	if (namespaces) O.keys(elAndUsedAliases[1]).forEach(function(alias) {
+		var uri = namespaces[alias]
+		if (uri == null) return
+		el.attribute(xmlnsify(alias), uri)
+	})
+
 	return el.end({pretty: true, indent: "\t", spacebeforeslash: " "})
 }
 
 function render(xml, tagName, tag) {
-	tagName = tagName.replace(NAMESPACE_SEP, ":")
+	var namespaceAndTagName = parseNamespace(tagName)
+	var namespace = namespaceAndTagName[0]
+	tagName = serializeNamespace(namespaceAndTagName)
 
-	if (tagName[0] == ":") {
-		tagName = tagName.slice(1)
-		tag = O.create(tag, {xmlns: ""})
-	}
+	if (namespace == "") tag = O.create(tag, {xmlns: ""})
+	var usedAliases = {}
+	if (namespace != "") usedAliases[namespace || ""] = true
 
-	var el = xml.element(tagName, O.filter(tag, isAttribute), tag.$)
-
-	O.each(tag, function(obj, tagName) {
-		if (isArray(obj)) obj.forEach(render.bind(null, el, tagName))
-		else if (isElement(obj, tagName)) render(el, tagName, obj)
+	var attrs = O.mapKeys(O.filter(tag, isAttribute), function(name) {
+		var namespaceAndName = parseNamespace(name)
+		if (namespaceAndName[0]) usedAliases[namespaceAndName[0]] = true
+		return serializeNamespace(namespaceAndName)
 	})
 
-	return el
+	var el = xml.element(tagName, attrs, tag.$)
+
+	O.each(tag, function(obj, tagName) {
+		if (isArray(obj)) obj.forEach(function(tag) {
+			O.merge(usedAliases, render(el, tagName, tag)[1])
+		})
+		else if (isElement(obj, tagName))
+			O.merge(usedAliases, render(el, tagName, obj)[1])
+	})
+
+	return [el, usedAliases]
 }
 
-function getNamespaces(tagName, tag) {
-	return Object.keys(traverseTag(function(seen, tagName, _tag) {
-		var namespace = tagName.substring(0, tagName.indexOf(NAMESPACE_SEP))
-		seen[namespace] = true
-		return seen
-	}, {}, tagName, tag))
+function parseNamespace(name) {
+	var pair = name.split(/[$:]/)
+	return pair[1] == null ? [null, pair[0]] : pair
 }
 
-function traverseTag(fn, value, tagName, tag) {
-	var recurse = traverseTag.bind(null, fn)
-
-	return reduce(function(value, tag, tagName) {
-		if (isArray(tag))
-			return tag.reduce(function(v, t) { return recurse(v, tagName, t) }, value)
-		else if (isElement(tag, tagName))
-			return recurse(value, tagName, tag)
-		else
-			return value
-	}, fn(value, tagName, tag), tag)
+function serializeNamespace(namespaceAndName) {
+	return namespaceAndName[0] ? namespaceAndName.join(":") : namespaceAndName[1]
 }
 
 function xmlnsify(name) { return name == "" ? "xmlns" : "xmlns:" + name }
