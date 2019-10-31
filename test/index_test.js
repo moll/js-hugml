@@ -1,3 +1,4 @@
+var O = require("oolong")
 var Hugml = require("..")
 var outdent = require("./outdent")
 var MANIFEST_URN = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"
@@ -394,266 +395,579 @@ describe("Hugml", function() {
 	})
 
 	describe(".prototype.stringify", function() {
-		it("must stringify XML", function() {
-			var obj = new Hugml().stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-
-				person: {
-					sex: "male",
-					name: {$: "John"},
-					age: {$: "13"},
-				}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<person sex="male">
-					<name>John</name>
-					<age>13</age>
-				</person>
-			`)
-		})
-
-		it("must stringify XML with repeating tags", function() {
-			var obj = new Hugml().stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-
-				people: {
-					person: [{
-						sex: "male",
-						name: {$: "John"},
-						age: {$: "13"},
-					}, {
-						sex: "female",
-						name: {$: "Mary"},
-						age: {$: "42"},
-					}]
-				}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<people>
-					<person sex="male">
-						<name>John</name>
-						<age>13</age>
-					</person>
-					<person sex="female">
-						<name>Mary</name>
-						<age>42</age>
-					</person>
-				</people>
-			`)
-		})
-
-		it("must stringify self-closed tags with no attributes", function() {
-			var obj = new Hugml().stringify({
-				version: "1.0",
+		it("must stringify with version 1.0 by default", function() {
+			var xml = new Hugml().stringify({
 				encoding: "UTF-8",
 				person: {}
 			})
 
-			obj.must.eql(outdent`
+			xml.must.eql(outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>
 				<person />
 			`)
 		})
 
-		it("must stringify XML given inline namespace", function() {
-			var obj = new Hugml().stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-
-				"dav:propfind": {
-					"xmlns:dav": "DAV:",
-					"dav:prop": {"dav:current-user-principal": {}}
-				}
+		it("must stringify with given version", function() {
+			var xml = new Hugml().stringify({
+				version: "1.1",
+				person: {}
 			})
 
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<dav:propfind xmlns:dav="DAV:">
-					<dav:prop>
-						<dav:current-user-principal />
-					</dav:prop>
-				</dav:propfind>
-			`)
-		})
-
-		it("must stringify XML given namespace", function() {
-			var hugml = new Hugml({"DAV:": "dav"})
-
-			var obj = hugml.stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-				dav$propfind: {dav$prop: {"dav$current-user-principal": {}}}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<dav:propfind xmlns:dav="DAV:">
-					<dav:prop>
-						<dav:current-user-principal />
-					</dav:prop>
-				</dav:propfind>
-			`)
-		})
-
-		it("must stringify XML given namespaced attribute", function() {
-			var hugml = new Hugml({[MANIFEST_URN]: "m"})
-
-			var obj = hugml.stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-				m$manifest: {"m$file-entry": {"m$full-path": "/"}}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<m:manifest xmlns:m="${MANIFEST_URN}">
-					<m:file-entry m:full-path="/" />
-				</m:manifest>
-			`)
-		})
-
-		it("must stringify XML given default namespace", function() {
-			var hugml = new Hugml({"DAV:": ""})
-
-			var obj = hugml.stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-				propfind: {prop: {"current-user-principal": {}, ":unknown": {}}}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<propfind xmlns="DAV:">
-					<prop>
-						<current-user-principal />
-						<unknown xmlns="" />
-					</prop>
-				</propfind>
-			`)
-		})
-
-		it("must stringify XML given renamed default namespace", function() {
-			var hugml = new Hugml({"DAV:": "", "": "xml"})
-
-			var obj = hugml.stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-				propfind: {prop: {"xml$unknown": {}}}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<propfind xmlns="DAV:" xmlns:xml="">
-					<prop>
-						<xml:unknown />
-					</prop>
-				</propfind>
-			`)
-		})
-
-		it("must stringify XML with only used namespaces", function() {
-			var hugml = new Hugml({
-				"DAV:": "",
-				"urn:ietf:params:xml:ns:caldav": "caldav",
-				"http://calendarserver.org/ns/": "calsrv",
-			})
-
-			var obj = hugml.stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-
-				multistatus: {
-					response: {"calsrv$getctag": {"$": "42"}}
-				}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<multistatus xmlns="DAV:" xmlns:calsrv="http://calendarserver.org/ns/">
-					<response>
-						<calsrv:getctag>42</calsrv:getctag>
-					</response>
-				</multistatus>
-			`)
-		})
-
-		it("must stringify XML with only used attribute namespaces", function() {
-			var hugml = new Hugml({
-				"DAV:": "",
-				"urn:ietf:params:xml:ns:caldav": "caldav",
-				"http://calendarserver.org/ns/": "calsrv",
-			})
-
-			var obj = hugml.stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-
-				multistatus: {
-					response: {"calsrv$getctag": "42"}
-				}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<multistatus xmlns="DAV:" xmlns:calsrv="http://calendarserver.org/ns/">
-					<response calsrv:getctag="42" />
-				</multistatus>
-			`)
-		})
-
-		it("must throw error given unknown namespace", function() {
-			var hugml = new Hugml({"DAV:": "dav"})
-
-			var err
-			try {
-				hugml.stringify({
-					version: "1.0",
-					encoding: "UTF-8",
-					dav$propfind: {gol$prop: {}}
-				})
-			}
-			catch (ex) { err = ex }
-			err.must.be.an.error(/unknown namespace/i)
-		})
-
-		it("must stringify with version 1.0 by default", function() {
-			var obj = new Hugml().stringify({
-				encoding: "UTF-8",
-				person: {sex: "male"}
-			})
-
-			obj.must.eql(outdent`
-				<?xml version="1.0" encoding="UTF-8" ?>
-				<person sex="male" />
+			xml.must.eql(outdent`
+				<?xml version="1.1" encoding="UTF-8" ?>
+				<person />
 			`)
 		})
 
 		it("must stringify with UTF-8 by default", function() {
-			var obj = new Hugml().stringify({
+			var xml = new Hugml().stringify({
 				version: "1.0",
-				person: {sex: "male"}
+				person: {}
 			})
 
-			obj.must.eql(outdent`
+			xml.must.eql(outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>
-				<person sex="male" />
+				<person />
 			`)
+		})
+
+		it("must stringify with given encoding by default", function() {
+			var xml = new Hugml().stringify({
+				encoding: "utf-9",
+				person: {}
+			})
+
+			xml.must.eql(outdent`
+				<?xml version="1.0" encoding="utf-9" ?>
+				<person />
+			`)
+		})
+
+		describe("given a tag", function() {
+			it("must stringify empty tag", function() {
+				var xml = new Hugml().stringify({person: {}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person />
+				`)
+			})
+
+			it("must render tag with undefined text", function() {
+				var xml = new Hugml().stringify({person: {$: undefined}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person />
+				`)
+			})
+
+			it("must render tag with null text", function() {
+				var xml = new Hugml().stringify({person: {$: null}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person />
+				`)
+			})
+
+			it("must render tag with boolean text of false", function() {
+				var xml = new Hugml().stringify({person: {$: false}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person>false</person>
+				`)
+			})
+
+			it("must render tag with boolean text of true", function() {
+				var xml = new Hugml().stringify({person: {$: true}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person>true</person>
+				`)
+			})
+
+			it("must render tag with number text", function() {
+				var xml = new Hugml().stringify({
+					person: {$: 42}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person>42</person>
+				`)
+			})
+
+			it("must render tag with empty string text", function() {
+				var xml = new Hugml().stringify({person: {$: ""}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person />
+				`)
+			})
+
+			it("must render tag with string text", function() {
+				var xml = new Hugml().stringify({person: {$: "John"}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person>John</person>
+				`)
+			})
+
+			// These escapes also match the canonicalization model.
+			// https://www.w3.org/TR/xml-c14n/#ProcessingModel
+			O.each({
+				"&": "&amp;",
+				"<": "&lt;",
+				">": "&gt;",
+				"\r": "&#xD;"
+			}, function(to, from) {
+				it("must escape " + JSON.stringify(from) + " in attributes",
+					function() {
+					var xml = new Hugml().stringify({person: {$: `John ${from} Doe`}})
+
+					xml.must.eql(outdent`
+						<?xml version="1.0" encoding="UTF-8" ?>
+						<person>John ${to} Doe</person>
+					`)
+				})
+			})
+
+			it("must not escape quotes in string text", function() {
+				var xml = new Hugml().stringify({
+					person: {$: "John \"Doe\" Smith"}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person>John "Doe" Smith</person>
+				`)
+			})
+
+			it("must not escape tabs in string text", function() {
+				var xml = new Hugml().stringify({
+					person: {$: "John\tSmith"}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person>John\tSmith</person>
+				`)
+			})
+
+			it("must not escape newline in string text", function() {
+				var xml = new Hugml().stringify({
+					person: {$: "John\nSmith"}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person>John\nSmith</person>
+				`)
+			})
+		})
+
+		describe("given a tag and attributes", function() {
+			it("must render tag with undefined attribute", function() {
+				var xml = new Hugml().stringify({person: {name: undefined}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person />
+				`)
+			})
+
+			it("must render tag with null attribute", function() {
+				var xml = new Hugml().stringify({person: {name: null}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person />
+				`)
+			})
+
+			it("must render tag with boolean attribute of true", function() {
+				var xml = new Hugml().stringify({person: {name: true}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person name="true" />
+				`)
+			})
+
+			it("must render tag with boolean attribute of false", function() {
+				var xml = new Hugml().stringify({person: {name: false}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person />
+				`)
+			})
+
+			it("must render tag with number attribute", function() {
+				var xml = new Hugml().stringify({person: {name: 42}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person name="42" />
+				`)
+			})
+
+			it("must render tag with string attribute", function() {
+				var xml = new Hugml().stringify({person: {name: "John"}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person name="John" />
+				`)
+			})
+
+			it("must render tag with attributes", function() {
+				var xml = new Hugml().stringify({person: {name: "John", age: 13}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person name="John" age="13" />
+				`)
+			})
+
+			// These escapes also match the canonicalization model.
+			// https://www.w3.org/TR/xml-c14n/#ProcessingModel
+			O.each({
+				"&": "&amp;",
+				"<": "&lt;",
+				"\"": "&quot;",
+				"\t": "&#x9;",
+				"\n": "&#xA;",
+				"\r": "&#xD;"
+			}, function(to, from) {
+				it("must escape " + JSON.stringify(from) + " in attributes",
+					function() {
+					var xml = new Hugml().stringify({person: {name: `John ${from} Doe`}})
+
+					xml.must.eql(outdent`
+						<?xml version="1.0" encoding="UTF-8" ?>
+						<person name="John ${to} Doe" />
+					`)
+				})
+			})
+
+			it("must not escape single quotes in attributes", function() {
+				var xml = new Hugml().stringify({person: {name: "John 'Doe' Smith"}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person name="John 'Doe' Smith" />
+				`)
+			})
+
+			it("must not replace \">\" in attributes", function() {
+				var xml = new Hugml().stringify({person: {name: "John > Doe"}})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person name="John > Doe" />
+				`)
+			})
+		})
+
+		describe("given a tag with children", function() {
+			it("must stringify XML with children", function() {
+				var xml = new Hugml().stringify({
+					person: {
+						sex: "male",
+						name: {$: "John"},
+						age: {$: "13"},
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person sex="male">
+						<name>John</name>
+						<age>13</age>
+					</person>
+				`)
+			})
+
+			it("must stringify XML with grandchildren", function() {
+				var xml = new Hugml().stringify({
+					person: {
+						sex: "male",
+						name: {$: "John"},
+						age: {$: "13"},
+						children: {child: [
+							{name: {$: "Alice"}, sex: "female"},
+							{name: {$: "Bob"}, sex: "male"}
+						]}
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<person sex="male">
+						<name>John</name>
+						<age>13</age>
+						<children>
+							<child sex="female">
+								<name>Alice</name>
+							</child>
+							<child sex="male">
+								<name>Bob</name>
+							</child>
+						</children>
+					</person>
+				`)
+			})
+
+			it("must not indent multiline text", function() {
+				var xml = new Hugml().stringify({
+					story: {prologue: {$: "- One\n- Two\n- Three"}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<story>
+						<prologue>- One
+					- Two
+					- Three</prologue>
+					</story>
+				`)
+			})
+		})
+
+		describe("given a tag with namespaces", function() {
+			it("must stringify XML given inline default namespace", function() {
+				var xml = new Hugml().stringify({
+					multistatus: {
+						xmlns: "DAV:",
+
+						response: {
+							xmlns$calsrv: "http://calendarserver.org/ns/",
+							calsrv$getctag: {"$": "42"}
+						}
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<multistatus xmlns="DAV:">
+						<response xmlns:calsrv="http://calendarserver.org/ns/">
+							<calsrv:getctag>42</calsrv:getctag>
+						</response>
+					</multistatus>
+				`)
+			})
+
+			it("must stringify XML given inline namespace", function() {
+				var xml = new Hugml().stringify({
+					dav$multistatus: {
+						xmlns$dav: "DAV:",
+
+						dav$response: {
+							xmlns$calsrv: "http://calendarserver.org/ns/",
+							calsrv$getctag: {"$": "42"}
+						}
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<dav:multistatus xmlns:dav="DAV:">
+						<dav:response xmlns:calsrv="http://calendarserver.org/ns/">
+							<calsrv:getctag>42</calsrv:getctag>
+						</dav:response>
+					</dav:multistatus>
+				`)
+			})
+
+			it("must stringify XML given configured default namespace",
+				function() {
+				var hugml = new Hugml({"DAV:": ""})
+
+				var xml = hugml.stringify({
+					propfind: {prop: {"current-user-principal": {}}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<propfind xmlns="DAV:">
+						<prop>
+							<current-user-principal />
+						</prop>
+					</propfind>
+				`)
+			})
+
+			it("must stringify XML given configured default namespace and argument",
+				function() {
+				var hugml = new Hugml({"DAV:": ""})
+
+				var xml = hugml.stringify({
+					propfind: {foo: "bar", prop: {"current-user-principal": {}}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<propfind xmlns="DAV:" foo="bar">
+						<prop>
+							<current-user-principal />
+						</prop>
+					</propfind>
+				`)
+			})
+
+			it("must stringify XML given configured default namespace and rename",
+				function() {
+				var hugml = new Hugml({"DAV:": "", "": "xml"})
+
+				var xml = hugml.stringify({
+					propfind: {prop: {"xml$unknown": {}}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<propfind xmlns="DAV:" xmlns:xml="">
+						<prop>
+							<xml:unknown />
+						</prop>
+					</propfind>
+				`)
+			})
+
+			it("must stringify XML given configured namespace", function() {
+				var hugml = new Hugml({"DAV:": "dav"})
+
+				var xml = hugml.stringify({
+					dav$propfind: {dav$prop: {"dav$current-user-principal": {}}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<dav:propfind xmlns:dav="DAV:">
+						<dav:prop>
+							<dav:current-user-principal />
+						</dav:prop>
+					</dav:propfind>
+				`)
+			})
+
+			it("must stringify XML given configured namespace and plain attribute",
+				function() {
+				var hugml = new Hugml({"DAV:": "dav"})
+
+				var xml = hugml.stringify({
+					dav$propfind: {
+						foo: "bar",
+						dav$prop: {"dav$current-user-principal": {}}
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<dav:propfind xmlns:dav="DAV:" foo="bar">
+						<dav:prop>
+							<dav:current-user-principal />
+						</dav:prop>
+					</dav:propfind>
+				`)
+			})
+
+			it("must stringify XML given configured namespaced attribute",
+				function() {
+				var hugml = new Hugml({[MANIFEST_URN]: "m"})
+
+				var xml = hugml.stringify({
+					m$manifest: {"m$file-entry": {"m$full-path": "/"}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<m:manifest xmlns:m="${MANIFEST_URN}">
+						<m:file-entry m:full-path="/" />
+					</m:manifest>
+				`)
+			})
+
+			it("must not stringify XML configured default namespace if not used",
+				function() {
+				var hugml = new Hugml({
+					"urn:mammals": "",
+					"urn:humans": "humans"
+				})
+
+				var xml = hugml.stringify({
+					humans$person: {sex: "male", humans$name: {$: "John"}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<humans:person xmlns:humans="urn:humans" sex="male">
+						<humans:name>John</humans:name>
+					</humans:person>
+				`)
+			})
+
+			it("must stringify XML with only used namespaces", function() {
+				var hugml = new Hugml({
+					"urn:mammals": "mammals",
+					"urn:humans": "humans",
+					"urn:birds": "birds"
+				})
+
+				var xml = hugml.stringify({
+					mammals$population: {
+						humans$person: {sex: "male", humans$name: {$: "John"}}
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<mammals:population xmlns:mammals="urn:mammals" xmlns:humans="urn:humans">
+						<humans:person sex="male">
+							<humans:name>John</humans:name>
+						</humans:person>
+					</mammals:population>
+				`)
+			})
+
+			it("must stringify XML with only used namespaced attributes", function() {
+				var hugml = new Hugml({
+					"urn:mammals": "mammals",
+					"urn:humans": "humans",
+					"urn:birds": "birds"
+				})
+
+				var xml = hugml.stringify({
+					population: {
+						person: {
+							humans$sex: "male", name: {$: "John"},
+							peacocking: {birds$plumage: "dotted"}
+						}
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<population xmlns:humans="urn:humans" xmlns:birds="urn:birds">
+						<person humans:sex="male">
+							<name>John</name>
+							<peacocking birds:plumage="dotted" />
+						</person>
+					</population>
+				`)
+			})
 		})
 
 		// https://github.com/oozcitak/xmlbuilder-js/issues/147
 		it("must stringify emoji text", function() {
-			var obj = new Hugml().stringify({
-				version: "1.0",
-				emoji: {$: "💩"}
-			})
+			var xml = new Hugml().stringify({emoji: {$: "💩"}})
 
-			obj.must.eql(outdent`
+			xml.must.eql(outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>
 				<emoji>💩</emoji>
 			`)
@@ -695,9 +1009,6 @@ describe("Hugml", function() {
 	describe(".stringify", function() {
 		it("must stringify XML", function() {
 			var obj = Hugml.stringify({
-				version: "1.0",
-				encoding: "UTF-8",
-
 				person: {
 					sex: "male",
 					name: {$: "John"},

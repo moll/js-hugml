@@ -2,7 +2,7 @@
 - Upgrades Neodoc to v2.
 - Adds a space before the closing bracket (`<foo />`) by default.
 - Adds support for namespaced attributes.
-- Throws an error when an unknown namespace alias is used during serializing.
+- Rewrites XML serializing to not depend on [Xmlbuilder.js](https://www.npmjs.com/package/xmlbuilder).
 
 ## 1.0.1 (May 4, 2018)
 - Upgrades [Xmlbuilder.js](https://www.npmjs.com/package/xmlbuilder) to v10 to [fix stringifying emoji](https://github.com/oozcitak/xmlbuilder-js/issues/147).

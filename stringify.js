@@ -1,71 +1,159 @@
-var O = require("oolong")
-var beginXml = require("xmlbuilder").begin
-var findKey = require("./lib").findKey
+var _ = require("./lib")
 var isArray = Array.isArray
+var concat = Array.prototype.concat.bind(Array.prototype)
+var flatten = Function.apply.bind(Array.prototype.concat, Array.prototype)
+var NL = "\n"
+var TAB = "\t"
 var TEXT = "$"
 
-// The aliases argument takes an object from alias to namespace URI.
-module.exports = function(namespaces, obj) {
-	var xml = beginXml()
-	xml.declaration(obj.version, obj.encoding || "UTF-8")
+// The namespaces argument takes an object from alias to namespace URI.
+exports = module.exports = function(namespaces, obj) {
+	var version = escapeAttr(obj.version || "1.0")
+	var encoding = escapeAttr(obj.encoding || "UTF-8")
 
-	// This currently outputs the namespaces on the root element and doesn't
-	// track namespace changes in nested tags. That is currently only necessary
-	// if passed `{$unknown: {}}` with no configured alias for the default
-	// namespace. It would return <unknown xmlns="" /> causing elements inside
-	// <unknown> to be scoped wrong.
-	var tagName = findKey(isElement, obj)
-	var tag = obj[tagName]
-
-	var elAndUsedAliases = render(xml, tagName, tag)
-	var el = elAndUsedAliases[0]
-
-	if (namespaces) O.keys(elAndUsedAliases[1]).forEach(function(alias) {
-		var uri = namespaces[alias]
-		if (uri == null) throw new Error("Unknown namespace alias: " + alias)
-		el.attribute(xmlnsify(alias), uri)
-	})
-
-	return el.end({pretty: true, indent: "\t", spacebeforeslash: " "})
+	return (
+		"<?xml " + kv("version", version) + " " + kv("encoding", encoding) + " ?>" +
+		NL +
+		stringifyTag("", serializeRoot(namespaces, obj))
+	)
 }
 
-function render(xml, tagName, tag) {
-	var namespaceAndTagName = parseNamespace(tagName)
-	var namespace = namespaceAndTagName[0]
-	tagName = serializeNamespace(namespaceAndTagName)
+function serializeRoot(namespaces, obj) {
+	var tagName = _.findKey(isElement, obj)
+	var tag = serializeTag(tagName, obj[tagName])
+	var attrs = tag[1]
 
-	if (namespace == "") tag = O.create(tag, {xmlns: ""})
-	var usedAliases = {}
-	if (namespace != "") usedAliases[namespace || ""] = true
+	if (!_.isEmpty(namespaces)) {
+		var aliases = _.keys(namespaces)
+		var seen = _.difference(aliases, searchForAliases(aliases, tag))
 
-	var attrs = O.mapKeys(O.filter(tag, isAttribute), function(name) {
-		var namespaceAndName = parseNamespace(name)
-		if (namespaceAndName[0]) usedAliases[namespaceAndName[0]] = true
-		return serializeNamespace(namespaceAndName)
-	})
+		attrs = concat(
+			seen.map(function(name) { return [xmlnsify(name), namespaces[name]] }),
+			attrs
+		)
+	}
 
-	var el = xml.element(tagName, attrs, tag.$)
-
-	O.each(tag, function(obj, tagName) {
-		if (isArray(obj)) obj.forEach(function(tag) {
-			O.merge(usedAliases, render(el, tagName, tag)[1])
-		})
-		else if (isElement(obj, tagName))
-			O.merge(usedAliases, render(el, tagName, obj)[1])
-	})
-
-	return [el, usedAliases]
+	return [tag[0], attrs, tag[2]]
 }
 
-function parseNamespace(name) {
-	var pair = name.split(/[$:]/)
-	return pair[1] == null ? [null, pair[0]] : pair
+function serializeTag(tagName, obj) {
+	var attrs = []
+	var children = []
+	var text = obj[TEXT]
+
+	_.each(obj, function(value, name) {
+		if (name == TEXT);
+		else if (isArray(value)) children.push([normalizeName(name), value])
+		else if (isElement(value, name)) children.push([normalizeName(name), value])
+		else attrs.push([normalizeName(name), value])
+	})
+
+	if (children.length > 0 && text != null)
+		throw new Error("Both child elements and text in " + tagName)
+
+	children = flatten(children.map(function(tagNameAndObj) {
+		var tagName = tagNameAndObj[0]
+		var obj = tagNameAndObj[1]
+		if (isArray(obj)) return obj.map(serializeTag.bind(null, tagName))
+		else return [serializeTag(tagName, obj)]
+	}))
+
+	return [normalizeName(tagName), attrs, text != null ? text : children]
 }
 
-function serializeNamespace(namespaceAndName) {
-	return namespaceAndName[0] ? namespaceAndName.join(":") : namespaceAndName[1]
+function stringifyTag(indent, tag) {
+	var name = tag[0]
+	var attrs = tag[1]
+	var children = tag[2]
+	var xml = indent + "<" + name + stringifyAttributes(attrs)
+	var endTag = "</" + name + ">"
+
+	switch (typeOf(children)) {
+		case "undefined":
+		case "null": return xml + " />"
+		case "boolean":
+		case "number": return xml + ">" + children + endTag
+		case "string":
+			if (children == "") return xml + " />"
+			else return xml + ">" + escape(children) + endTag
+
+		case "array":
+			if (children.length == 0) return xml + " />"
+			return xml += (
+				">\n" +
+				children.map(stringifyTag.bind(null, TAB + indent)).join(NL) +
+				"\n" + indent + endTag
+			)
+
+		default: throw new TypeError("Invalid child for: " + name)
+	}
+}
+
+function stringifyAttributes(attrs) {
+	return attrs.reduce(function(markup, nameAndValue) {
+		var name = nameAndValue[0]
+		var value = nameAndValue[1]
+
+		switch (typeOf(value)) {
+			case "undefined":
+			case "null": return markup
+			case "boolean": return value ? markup + " " + kv(name, value) : markup
+			case "number": return markup + " " + kv(name, value)
+			case "string": return markup + " " + kv(name, escapeAttr(value))
+			default: throw new TypeError("Invalid attribute: " + name + "=" + value)
+		}
+	}, "")
+}
+
+function searchForAliases(unseen, tag) {
+	if (unseen.length == 0) return unseen
+
+	unseen = _.difference(unseen, concat(
+		getNamespace(tag[0]) || "",
+		tag[1].map(_.first).map(getNamespace).filter(Boolean)
+	))
+
+	var children = tag[2]
+	if (isArray(children)) unseen = children.reduce(searchForAliases, unseen)
+	else if (isElement(children)) unseen = searchForAliases(unseen, tag)
+	return unseen
+}
+
+function escape(text) {
+	// https://www.w3.org/TR/REC-xml/#NT-CharData
+	// https://www.w3.org/TR/REC-xml/#sec-line-ends
+	text = text.replace(/&/g, "&amp;")
+	text = text.replace(/</g, "&lt;")
+	text = text.replace(/>/g, "&gt;")
+	text = text.replace(/\r/g, "&#xD;")
+	return text
+}
+
+function escapeAttr(text) {
+	// https://www.w3.org/TR/REC-xml/#NT-AttValue
+	// https://www.w3.org/TR/REC-xml/#AVNormalize
+	text = text.replace(/&/g, "&amp;")
+	text = text.replace(/</g, "&lt;")
+	text = text.replace(/"/g, "&quot;")
+	text = text.replace(/\t/g, "&#x9;")
+	text = text.replace(/\n/g, "&#xA;")
+	text = text.replace(/\r/g, "&#xD;")
+	return text
+}
+
+function typeOf(value) {
+	return value === null ? "null" : isArray(value) ? "array" : typeof value
+}
+
+function isElement(obj, key) {
+	return key != TEXT && obj !== null && typeof obj == "object"
+}
+
+function getNamespace(name) {
+	var index = name.indexOf(":")
+	return index == -1 ? null : name.slice(0, index)
 }
 
 function xmlnsify(name) { return name == "" ? "xmlns" : "xmlns:" + name }
-function isAttribute(obj, key) { return key != TEXT && !isElement(obj, key) }
-function isElement(obj, key) { return key != TEXT && typeof obj == "object" }
+function normalizeName(name) { return name.replace("$", ":") }
+function kv(name, value) { return name + "=\"" + value + "\"" }

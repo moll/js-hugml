@@ -1,18 +1,17 @@
-var O = require("oolong")
+var _ = require("./lib")
 var parse = require("./parse")
 var stringify = require("./stringify")
-var invert = require("./lib").invert
 module.exports = Hugml
 
 function Hugml(namespaces) {
 	if (namespaces) {
-		this.namespaces = O.create(this.namespaces, namespaces)
-		this.aliases = invert(this.namespaces)
+		this.namespaces = _.create(this.namespaces, namespaces)
+		this.aliases = _.invert(this.namespaces)
 	}
 }
 
-Hugml.prototype.namespaces = null
-Hugml.prototype.aliases = null
+Hugml.prototype.namespaces = Object.create(null)
+Hugml.prototype.aliases = Object.create(null)
 
 Hugml.prototype.parse = function(xml) {
 	return parse(this.namespaces, xml)
