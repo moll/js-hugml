@@ -974,6 +974,211 @@ describe("Hugml", function() {
 		})
 	})
 
+	describe(".prototype.canonicalize", function() {
+		it("must stringify XML without XML declaration", function() {
+			var xml = new Hugml().canonicalize({
+				person: {
+					sex: "male",
+					name: {$: "John"},
+					age: {$: "13"},
+				}
+			})
+
+			xml.must.eql(outdent`
+				<person sex="male">
+					<name>John</name>
+					<age>13</age>
+				</person>
+			`)
+		})
+
+		it("must render empty tag", function() {
+			var xml = new Hugml().canonicalize({person: {}})
+			xml.must.eql("<person></person>")
+		})
+
+		it("must render tag with undefined text", function() {
+			var xml = new Hugml().canonicalize({person: {$: undefined}})
+			xml.must.eql("<person></person>")
+		})
+
+		it("must render tag with null text", function() {
+			var xml = new Hugml().canonicalize({person: {$: null}})
+			xml.must.eql("<person></person>")
+		})
+
+		it("must render tag with empty string text", function() {
+			var xml = new Hugml().canonicalize({person: {$: ""}})
+			xml.must.eql("<person></person>")
+		})
+
+		// NOTE: Leave attributes empty intentionally to catch accidental
+		// comparisons on values.
+		it("must sort attributes alphabetically on the root element", function() {
+			var xml = new Hugml().canonicalize({
+				root: {y: "", x: ""}
+			})
+
+			xml.must.eql(`<root x="" y=""></root>`)
+		})
+
+		it("must sort attributes alphabetically on the child element", function() {
+			var xml = new Hugml().canonicalize({
+				root: {
+					child: {y: "", x: ""}
+				}
+			})
+
+			xml.must.eql(outdent`
+				<root>
+					<child x="" y=""></child>
+				</root>
+			`)
+		})
+
+		it("must sort namespaces and their attributes on the root element",
+			function() {
+			var hugml = new Hugml({
+				"urn:z": "a",
+				"urn:y": "b",
+				"urn:x": ""
+			})
+
+			var xml = hugml.canonicalize({
+				root: {
+					b$y: "",
+					b$x: "",
+					a$x: "",
+					x: "",
+					y: ""
+				}
+			})
+
+			xml.must.eql(outdent`
+				<root xmlns="urn:x" xmlns:a="urn:z" xmlns:b="urn:y" x="" y="" b:x="" b:y="" a:x=""></root>
+			`)
+		})
+
+		it("must sort namespaces and their attributes on the child element",
+			function() {
+			var hugml = new Hugml({
+				"urn:z": "a",
+				"urn:y": "b",
+				"urn:x": ""
+			})
+
+			var xml = hugml.canonicalize({
+				root: {
+					child: {
+						b$y: "",
+						b$x: "",
+						a$x: "",
+						x: "",
+						y: ""
+					}
+				}
+			})
+
+			xml.must.eql(outdent`
+				<root xmlns="urn:x">
+					<child xmlns:a="urn:z" xmlns:b="urn:y" x="" y="" b:x="" b:y="" a:x=""></child>
+				</root>
+			`)
+		})
+
+		it("must define namespaces only when first used", function() {
+			var hugml = new Hugml({
+				"urn:mammals": "mammals",
+				"urn:humans": "humans",
+				"urn:birds": "birds"
+			})
+
+			var xml = hugml.canonicalize({
+				population: {
+					humans$person: {
+						humans$name: {$: "John"},
+						humans$age: {$: 13},
+						mammals$peacocking: {birds$plumage: "dotted"},
+						birds$flight: {$: "none"}
+					}
+				}
+			})
+
+			xml.must.eql(outdent`
+				<population>
+					<humans:person xmlns:humans="urn:humans">
+						<humans:name>John</humans:name>
+						<humans:age>13</humans:age>
+						<mammals:peacocking xmlns:birds="urn:birds" xmlns:mammals="urn:mammals" birds:plumage="dotted"></mammals:peacocking>
+						<birds:flight xmlns:birds="urn:birds">none</birds:flight>
+					</humans:person>
+				</population>
+			`)
+		})
+
+		it("must canonicalize given path to node", function() {
+			var xml = new Hugml().canonicalize({
+				population: {
+					person: {
+						name: {$: "John"},
+						age: {$: 13}
+					}
+				}
+			}, ["population", "person"])
+
+			xml.must.eql(outdent`
+				<person>
+						<name>John</name>
+						<age>13</age>
+					</person>
+			`)
+		})
+
+		it("must canonicalize given path to second node", function() {
+			var xml = new Hugml().canonicalize({
+				population: {
+					person: [{
+						name: {$: "John"},
+						age: {$: 13}
+					}, {
+						name: {$: "Mike"},
+						age: {$: 42}
+					}]
+				}
+			}, ["population", "person", 1])
+
+			xml.must.eql(outdent`
+				<person>
+						<name>Mike</name>
+						<age>42</age>
+					</person>
+			`)
+		})
+
+		it("must canonicalize given path to node with namespaces", function() {
+			var hugml = new Hugml({
+				"urn:mammals": "mammals",
+				"urn:humans": "humans"
+			})
+
+			var xml = hugml.canonicalize({
+				population: {
+					humans$person: {
+						humans$name: {$: "John"},
+						humans$age: {$: 13}
+					}
+				}
+			}, ["population", "humans$person"])
+
+			xml.must.eql(outdent`
+				<humans:person xmlns:humans="urn:humans">
+						<humans:name>John</humans:name>
+						<humans:age>13</humans:age>
+					</humans:person>
+			`)
+		})
+	})
+
 	describe(".parse", function() {
 		it("must parse XML", function() {
 			var obj = Hugml.parse(outdent`
@@ -1018,6 +1223,25 @@ describe("Hugml", function() {
 
 			obj.must.eql(outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>
+				<person sex="male">
+					<name>John</name>
+					<age>13</age>
+				</person>
+			`)
+		})
+	})
+
+	describe(".canonicalize", function() {
+		it("must canonicalize XML", function() {
+			var obj = Hugml.canonicalize({
+				person: {
+					sex: "male",
+					name: {$: "John"},
+					age: {$: "13"},
+				}
+			})
+
+			obj.must.eql(outdent`
 				<person sex="male">
 					<name>John</name>
 					<age>13</age>

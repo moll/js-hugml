@@ -2,6 +2,7 @@ var _ = require("./lib")
 var isArray = Array.isArray
 var concat = Array.prototype.concat.bind(Array.prototype)
 var flatten = Function.apply.bind(Array.prototype.concat, Array.prototype)
+var CLOSABLE = true
 var NL = "\n"
 var TAB = "\t"
 var TEXT = "$"
@@ -11,14 +12,6 @@ exports = module.exports = function(namespaces, obj) {
 	var version = escapeAttr(obj.version || "1.0")
 	var encoding = escapeAttr(obj.encoding || "UTF-8")
 
-	return (
-		"<?xml " + kv("version", version) + " " + kv("encoding", encoding) + " ?>" +
-		NL +
-		stringifyTag("", serializeRoot(namespaces, obj))
-	)
-}
-
-function serializeRoot(namespaces, obj) {
 	var tagName = _.findKey(isElement, obj)
 	var tag = serializeTag(tagName, obj[tagName])
 	var attrs = tag[1]
@@ -33,7 +26,25 @@ function serializeRoot(namespaces, obj) {
 		)
 	}
 
-	return [tag[0], attrs, tag[2]]
+	return (
+		"<?xml " + kv("version", version) + " " + kv("encoding", encoding) + " ?>" +
+		NL +
+		stringifyTag("", CLOSABLE, [tag[0], attrs, tag[2]])
+	)
+}
+
+// Performs Exclusive XML Canonicalization, or what XML Digital Signatures call
+// "http://www.w3.org/2001/10/xml-exc-c14n#".
+exports.canonicalize = function(namespaces, obj, path) {
+	if (path == null || path.length == 0) path = [_.findKey(isElement, obj)]
+
+	var tagNameAndTag = follow(path, obj)
+	var tagName = tagNameAndTag[0]
+	obj = tagNameAndTag[1]
+
+	var tag = canonicalizeTag(namespaces, [], serializeTag(tagName, obj))
+	var indent = _.repeat(_.count(_.isString, path) - 1, "\t").join("")
+	return stringifyTag(indent, !CLOSABLE, tag).replace(/^\s+/, "")
 }
 
 function serializeTag(tagName, obj) {
@@ -61,7 +72,29 @@ function serializeTag(tagName, obj) {
 	return [normalizeName(tagName), attrs, text != null ? text : children]
 }
 
-function stringifyTag(indent, tag) {
+function canonicalizeTag(namespaces, scope, tag) {
+	var attrs = tag[1]
+	var children = tag[2]
+	var added = _.difference(getNamespaces(tag), scope)
+	scope = concat(scope, added)
+
+	attrs = concat(
+		added.map(function(name) { return [xmlnsify(name), namespaces[name]] }),
+		attrs
+	)
+
+	return [
+		tag[0],
+		_.sort(compareAttributeForC14n.bind(null, namespaces), attrs),
+
+		// All element children are in an array. The rest are textual children.
+		isArray(children)
+			? children.map(canonicalizeTag.bind(null, namespaces, scope))
+			: children
+	]
+}
+
+function stringifyTag(indent, closable, tag) {
 	var name = tag[0]
 	var attrs = tag[1]
 	var children = tag[2]
@@ -70,18 +103,18 @@ function stringifyTag(indent, tag) {
 
 	switch (typeOf(children)) {
 		case "undefined":
-		case "null": return xml + " />"
+		case "null": return xml + (closable ? " />" : ">" + endTag)
 		case "boolean":
 		case "number": return xml + ">" + children + endTag
 		case "string":
-			if (children == "") return xml + " />"
+			if (children == "") return xml + (closable ? " />" : ">" + endTag)
 			else return xml + ">" + escape(children) + endTag
 
 		case "array":
-			if (children.length == 0) return xml + " />"
+			if (children.length == 0) return xml + (closable ? " />" : ">" + endTag)
 			return xml += (
 				">\n" +
-				children.map(stringifyTag.bind(null, TAB + indent)).join(NL) +
+				children.map(stringifyTag.bind(null, TAB + indent, closable)).join(NL) +
 				"\n" + indent + endTag
 			)
 
@@ -108,15 +141,23 @@ function stringifyAttributes(attrs) {
 function searchForAliases(unseen, tag) {
 	if (unseen.length == 0) return unseen
 
-	unseen = _.difference(unseen, concat(
+	unseen = _.difference(unseen, getNamespaces(tag))
+	var children = tag[2]
+	if (isArray(children)) unseen = children.reduce(searchForAliases, unseen)
+	else if (isElement(children)) unseen = searchForAliases(unseen, children)
+	return unseen
+}
+
+function getNamespaces(tag) {
+	return _.uniq(concat(
 		getNamespace(tag[0]) || "",
 		tag[1].map(_.first).map(getNamespace).filter(Boolean)
 	))
+}
 
-	var children = tag[2]
-	if (isArray(children)) unseen = children.reduce(searchForAliases, unseen)
-	else if (isElement(children)) unseen = searchForAliases(unseen, tag)
-	return unseen
+function getNamespace(name) {
+	var index = name.indexOf(":")
+	return index == -1 ? null : name.slice(0, index)
 }
 
 function escape(text) {
@@ -141,6 +182,29 @@ function escapeAttr(text) {
 	return text
 }
 
+function compareAttributeForC14n(namespaces, a, b) {
+	var aName = a[0]
+	var bName = b[0]
+	if (aName == "xmlns" || bName == "xmlns") return aName == "xmlns" ? -1 : 1
+
+	var aNamespace = getNamespace(aName) || ""
+	var bNamespace = getNamespace(bName) || ""
+	var aNamespaceUri = namespaces[aNamespace] || ""
+	var bNamespaceUri = namespaces[bNamespace] || ""
+
+	return (
+		aNamespace == "xmlns" && bNamespace == "xmlns" ? cmp(a[0], b[0]) :
+		aNamespace == "xmlns" ? -1 :
+		bNamespace == "xmlns" ? 1 :
+		cmp(aNamespaceUri, bNamespaceUri) || cmp(a[0], b[0])
+	)
+}
+
+function follow(path, obj) {
+	obj = path.reduce(function(obj, step) { return obj[step] }, obj)
+	return [_.findLast(_.isString, path), obj]
+}
+
 function typeOf(value) {
 	return value === null ? "null" : isArray(value) ? "array" : typeof value
 }
@@ -149,11 +213,7 @@ function isElement(obj, key) {
 	return key != TEXT && obj !== null && typeof obj == "object"
 }
 
-function getNamespace(name) {
-	var index = name.indexOf(":")
-	return index == -1 ? null : name.slice(0, index)
-}
-
 function xmlnsify(name) { return name == "" ? "xmlns" : "xmlns:" + name }
 function normalizeName(name) { return name.replace("$", ":") }
 function kv(name, value) { return name + "=\"" + value + "\"" }
+function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0 }

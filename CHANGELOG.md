@@ -3,6 +3,7 @@
 - Adds a space before the closing bracket (`<foo />`) by default.
 - Adds support for namespaced attributes.
 - Rewrites XML serializing to not depend on [Xmlbuilder.js](https://www.npmjs.com/package/xmlbuilder).
+- Adds preliminary support for [Exclusive XML Canonicalization](https://www.w3.org/TR/xml-exc-c14n).
 
 ## 1.0.1 (May 4, 2018)
 - Upgrades [Xmlbuilder.js](https://www.npmjs.com/package/xmlbuilder) to v10 to [fix stringifying emoji](https://github.com/oozcitak/xmlbuilder-js/issues/147).
