@@ -320,5 +320,5 @@ If you find HugML.js needs improving, please don't hesitate to type to me now at
 
 [email]: mailto:andri@dot.ee
 [issues]: https://github.com/moll/js-hugml/issues
-[moll]: http://themoll.com
+[moll]: https://m811.com
 [monday]: https://mondayapp.com
