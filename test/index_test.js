@@ -526,7 +526,7 @@ describe("Hugml", function() {
 				">": "&gt;",
 				"\r": "&#xD;"
 			}, function(to, from) {
-				it("must escape " + JSON.stringify(from) + " in attributes",
+				it("must escape " + JSON.stringify(from) + " in string text",
 					function() {
 					var xml = new Hugml().stringify({person: {$: `John ${from} Doe`}})
 
