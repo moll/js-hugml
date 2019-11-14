@@ -1,6 +1,6 @@
 {
 	"name": "hugml",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"description": "An XML parsing and serializing library based on Google's GDATA and BadgerFish conventions. Supports namespaces.",
 	"keywords": [
 		"xml",

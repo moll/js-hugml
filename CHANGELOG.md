@@ -1,4 +1,4 @@
-## Unreleased
+## 1.1.0 (Nov 14, 2019)
 - Upgrades Neodoc to v2.
 - Adds a space before the closing bracket (`<foo />`) by default.
 - Adds support for namespaced attributes.
