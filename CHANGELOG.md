@@ -1,3 +1,7 @@
+## Unreleased
+- Skips serializing duplicate root element namespace attributes.  
+  This helps re-serialize parsed Hugml objects.
+
 ## 1.1.0 (Nov 14, 2019)
 - Upgrades Neodoc to v2.
 - Adds a space before the closing bracket (`<foo />`) by default.

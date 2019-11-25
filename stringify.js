@@ -20,10 +20,10 @@ exports = module.exports = function(namespaces, obj) {
 		var aliases = _.keys(namespaces)
 		var seen = _.difference(aliases, searchForAliases(aliases, tag))
 
-		attrs = concat(
+		attrs = _.uniq(concat(
 			seen.map(function(name) { return [xmlnsify(name), namespaces[name]] }),
 			attrs
-		)
+		), _.first)
 	}
 
 	return (

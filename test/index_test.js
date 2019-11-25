@@ -803,6 +803,26 @@ describe("Hugml", function() {
 				`)
 			})
 
+			it("must stringify XML given configured default namespace and duplicate declaration", function() {
+				var hugml = new Hugml({"DAV:": ""})
+
+				var xml = hugml.stringify({
+					propfind: {
+						xmlns: "DAV:",
+						prop: {"current-user-principal": {}}
+					}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<propfind xmlns="DAV:">
+						<prop>
+							<current-user-principal />
+						</prop>
+					</propfind>
+				`)
+			})
+
 			it("must stringify XML given configured default namespace and argument",
 				function() {
 				var hugml = new Hugml({"DAV:": ""})
@@ -844,6 +864,26 @@ describe("Hugml", function() {
 
 				var xml = hugml.stringify({
 					dav$propfind: {dav$prop: {"dav$current-user-principal": {}}}
+				})
+
+				xml.must.eql(outdent`
+					<?xml version="1.0" encoding="UTF-8" ?>
+					<dav:propfind xmlns:dav="DAV:">
+						<dav:prop>
+							<dav:current-user-principal />
+						</dav:prop>
+					</dav:propfind>
+				`)
+			})
+
+			it("must stringify XML given configured namespace and duplicate declaration", function() {
+				var hugml = new Hugml({"DAV:": "dav"})
+
+				var xml = hugml.stringify({
+					dav$propfind: {
+						"xmlns:dav": "DAV:",
+						dav$prop: {"dav$current-user-principal": {}}
+					}
 				})
 
 				xml.must.eql(outdent`
