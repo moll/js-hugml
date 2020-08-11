@@ -1,4 +1,4 @@
-## Unreleased
+## 1.2.0 (Aug 11, 2020)
 - Adds support for character data (CDATA).
 
 ## 1.1.1 (Nov 25, 2019)
