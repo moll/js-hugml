@@ -76,8 +76,12 @@ Parser.prototype.onopentag = function(tag) {
 }
 
 Parser.prototype.ontext = function(text) {
-	last(this.stack)[TEXT_ATTR] = text
+	var node = last(this.stack)
+	if (node[TEXT_ATTR] == null) node[TEXT_ATTR] = text
+	else node[TEXT_ATTR] += text
 }
+
+Parser.prototype.oncdata = Parser.prototype.ontext
 
 Parser.prototype.onclosetag = function(_tag) {
 	this.stack.pop()

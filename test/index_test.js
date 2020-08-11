@@ -372,6 +372,64 @@ describe("Hugml", function() {
 			})
 		})
 
+		it("must parse XML with character data", function() {
+			var obj = new Hugml().parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<summary type="html"><![CDATA[Hello, world!]]></summary>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+				summary: {type: "html", $: "Hello, world!"}
+			})
+		})
+
+		it("must parse XML with split character data", function() {
+			var obj = new Hugml().parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<summary type="html">
+					<![CDATA[Hello, ]]><![CDATA[world!]]>
+				</summary>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+				summary: {type: "html", $: "Hello, world!"}
+			})
+		})
+
+		it("must parse XML with empty character data", function() {
+			var obj = new Hugml().parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<summary type="html"><![CDATA[]]></summary>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+				summary: {type: "html"}
+			})
+		})
+
+		// NOTE: It's unclear whether the space after "," is supposed to be dropped
+		// or not...
+		it("must parse XML with mixed character data and text", function() {
+			var obj = new Hugml().parse(outdent`
+				<?xml version="1.0" encoding="UTF-8" ?>
+				<summary type="html">
+					<![CDATA[Hello]]>, <![CDATA[world!]]>
+				</summary>
+			`)
+
+			obj.must.eql({
+				version: "1.0",
+				encoding: "UTF-8",
+				summary: {type: "html", $: "Hello,world!"}
+			})
+		})
+
 		it("must throw error given unbound namespace", function() {
 			var xml = outdent`
 				<?xml version="1.0" encoding="UTF-8" ?>

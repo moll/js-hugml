@@ -1,3 +1,6 @@
+## Unreleased
+- Adds support for character data (CDATA).
+
 ## 1.1.1 (Nov 25, 2019)
 - Skips serializing duplicate root element namespace attributes.  
   This helps re-serialize parsed Hugml objects.
