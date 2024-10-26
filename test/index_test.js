@@ -1,4 +1,4 @@
-var O = require("oolong")
+var _ = require("../lib")
 var Hugml = require("..")
 var outdent = require("./outdent")
 var MANIFEST_URN = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"
@@ -578,7 +578,7 @@ describe("Hugml", function() {
 
 			// These escapes also match the canonicalization model.
 			// https://www.w3.org/TR/xml-c14n/#ProcessingModel
-			O.each({
+			_.each({
 				"&": "&amp;",
 				"<": "&lt;",
 				">": "&gt;",
@@ -595,7 +595,7 @@ describe("Hugml", function() {
 				})
 			})
 
-			O.each({
+			_.each({
 				"double quotes": "John \"Doe\" Smith",
 				"single quotes": "John's Car",
 				"tabs": "John\tSmith",
@@ -680,7 +680,7 @@ describe("Hugml", function() {
 
 			// These escapes also match the canonicalization model.
 			// https://www.w3.org/TR/xml-c14n/#ProcessingModel
-			O.each({
+			_.each({
 				"&": "&amp;",
 				"<": "&lt;",
 				"\"": "&quot;",
@@ -699,7 +699,7 @@ describe("Hugml", function() {
 				})
 			})
 
-			O.each({
+			_.each({
 				"single quotes": "John's Car",
 				"greater-than": "John > Car"
 			}, function(value, title) {

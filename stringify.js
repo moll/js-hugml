@@ -1,7 +1,4 @@
 var _ = require("./lib")
-var isArray = Array.isArray
-var concat = Array.prototype.concat.bind(Array.prototype)
-var flatten = Function.apply.bind(Array.prototype.concat, Array.prototype)
 var CLOSABLE = true
 var NL = "\n"
 var TAB = "\t"
@@ -20,7 +17,7 @@ exports = module.exports = function(namespaces, obj) {
 		var aliases = _.keys(namespaces)
 		var seen = _.difference(aliases, searchForAliases(aliases, tag))
 
-		attrs = _.uniq(concat(
+		attrs = _.uniq(_.concat(
 			seen.map(function(name) { return [xmlnsify(name), namespaces[name]] }),
 			attrs
 		), _.first)
@@ -54,7 +51,7 @@ function serializeTag(tagName, obj) {
 
 	_.each(obj, function(value, name) {
 		if (name == TEXT);
-		else if (isArray(value)) children.push([normalizeName(name), value])
+		else if (_.isArray(value)) children.push([normalizeName(name), value])
 		else if (isElement(value, name)) children.push([normalizeName(name), value])
 		else attrs.push([normalizeName(name), value])
 	})
@@ -62,10 +59,10 @@ function serializeTag(tagName, obj) {
 	if (children.length > 0 && text != null)
 		throw new Error("Both child elements and text in " + tagName)
 
-	children = flatten(children.map(function(tagNameAndObj) {
+	children = _.flatten(children.map(function(tagNameAndObj) {
 		var tagName = tagNameAndObj[0]
 		var obj = tagNameAndObj[1]
-		if (isArray(obj)) return obj.map(serializeTag.bind(null, tagName))
+		if (_.isArray(obj)) return obj.map(serializeTag.bind(null, tagName))
 		else return [serializeTag(tagName, obj)]
 	}))
 
@@ -76,9 +73,9 @@ function canonicalizeTag(namespaces, scope, tag) {
 	var attrs = tag[1]
 	var children = tag[2]
 	var added = _.difference(getNamespaces(tag), scope)
-	scope = concat(scope, added)
+	scope = _.concat(scope, added)
 
-	attrs = concat(
+	attrs = _.concat(
 		added.map(function(name) { return [xmlnsify(name), namespaces[name]] }),
 		attrs
 	)
@@ -88,7 +85,7 @@ function canonicalizeTag(namespaces, scope, tag) {
 		_.sort(compareAttributeForC14n.bind(null, namespaces), attrs),
 
 		// All element children are in an array. The rest are textual children.
-		isArray(children)
+		_.isArray(children)
 			? children.map(canonicalizeTag.bind(null, namespaces, scope))
 			: children
 	]
@@ -143,13 +140,13 @@ function searchForAliases(unseen, tag) {
 
 	unseen = _.difference(unseen, getNamespaces(tag))
 	var children = tag[2]
-	if (isArray(children)) unseen = children.reduce(searchForAliases, unseen)
+	if (_.isArray(children)) unseen = children.reduce(searchForAliases, unseen)
 	else if (isElement(children)) unseen = searchForAliases(unseen, children)
 	return unseen
 }
 
 function getNamespaces(tag) {
-	return _.uniq(concat(
+	return _.uniq(_.concat(
 		getNamespace(tag[0]) || "",
 		tag[1].map(_.first).map(getNamespace).filter(Boolean)
 	))
@@ -206,7 +203,7 @@ function follow(path, obj) {
 }
 
 function typeOf(value) {
-	return value === null ? "null" : isArray(value) ? "array" : typeof value
+	return value === null ? "null" : _.isArray(value) ? "array" : typeof value
 }
 
 function isElement(obj, key) {

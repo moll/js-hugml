@@ -1,7 +1,5 @@
+var _ = require("./lib")
 var SaxParser = require("sax").SAXParser
-var last = require("./lib").last
-var reduce = require("./lib").reduce
-var isArray = Array.isArray
 var hasDefaultNamespace = require("./lib").contains.bind(null, "")
 var STRICT = true
 var EMPTY = Object.create(null)
@@ -62,13 +60,13 @@ Parser.prototype.onopentag = function(tag) {
 	var self = this
 	var name = this.nameTag(tag)
 
-	var attrs = reduce(function(attrs, attr) {
+	var attrs = _.reduce(function(attrs, attr) {
 		attrs[self.nameAttribute(attr)] = attr.value
 		return attrs
 	}, {}, tag.attributes)
 
-	var parent = last(this.stack)
-	if (name in parent && isArray(parent[name])) parent[name].push(attrs)
+	var parent = _.last(this.stack)
+	if (name in parent && _.isArray(parent[name])) parent[name].push(attrs)
 	else if (typeof parent[name] == "object") parent[name] = [parent[name], attrs]
 	else parent[name] = attrs
 
@@ -76,7 +74,7 @@ Parser.prototype.onopentag = function(tag) {
 }
 
 Parser.prototype.ontext = function(text) {
-	var node = last(this.stack)
+	var node = _.last(this.stack)
 	if (node[TEXT_ATTR] == null) node[TEXT_ATTR] = text
 	else node[TEXT_ATTR] += text
 }
