@@ -1,12 +1,12 @@
 HugML.js
 ========
 [![NPM version][npm-badge]](https://www.npmjs.com/package/hugml)
-[![Build status][travis-badge]](https://travis-ci.org/moll/js-hugml)
+[![Build status][build-badge]](https://github.com/moll/js-hugml/actions/workflows/node.yaml)
 
 HugML.js is an XML parsing and serializing/stringifying library for JavaScript based on **[Google's GData][gdata]** and **[BadgerFish][badgerfish]** conversion conventions. It **supports namespaces** and **namespace aliasing** to make working with more complex XML convenient. The *ML* at the end of HugML stands for "Markup Language" — a markup language of angled hugs (`<<<>>>`). :)
 
 [npm-badge]: https://img.shields.io/npm/v/hugml.svg
-[travis-badge]: https://travis-ci.org/moll/js-hugml.svg?branch=master
+[build-badge]: https://github.com/moll/js-hugml/actions/workflows/node.yaml/badge.svg
 [gdata]: https://developers.google.com/gdata/docs/json?csw=1
 [badgerfish]: http://badgerfish.ning.com
 
