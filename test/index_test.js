@@ -595,37 +595,22 @@ describe("Hugml", function() {
 				})
 			})
 
-			it("must not escape quotes in string text", function() {
-				var xml = new Hugml().stringify({
-					person: {$: "John \"Doe\" Smith"}
+			O.each({
+				"double quotes": "John \"Doe\" Smith",
+				"single quotes": "John's Car",
+				"tabs": "John\tSmith",
+				"newlines": "John\nSmith"
+			}, function(value, title) {
+				it(`must not escape ${title} in string text`, function() {
+					var xml = new Hugml().stringify({
+						person: {$: value}
+					})
+
+					xml.must.eql(outdent`
+						<?xml version="1.0" encoding="UTF-8" ?>
+						<person>${value}</person>
+					`)
 				})
-
-				xml.must.eql(outdent`
-					<?xml version="1.0" encoding="UTF-8" ?>
-					<person>John "Doe" Smith</person>
-				`)
-			})
-
-			it("must not escape tabs in string text", function() {
-				var xml = new Hugml().stringify({
-					person: {$: "John\tSmith"}
-				})
-
-				xml.must.eql(outdent`
-					<?xml version="1.0" encoding="UTF-8" ?>
-					<person>John\tSmith</person>
-				`)
-			})
-
-			it("must not escape newline in string text", function() {
-				var xml = new Hugml().stringify({
-					person: {$: "John\nSmith"}
-				})
-
-				xml.must.eql(outdent`
-					<?xml version="1.0" encoding="UTF-8" ?>
-					<person>John\nSmith</person>
-				`)
 			})
 		})
 
@@ -714,22 +699,18 @@ describe("Hugml", function() {
 				})
 			})
 
-			it("must not escape single quotes in attributes", function() {
-				var xml = new Hugml().stringify({person: {name: "John 'Doe' Smith"}})
+			O.each({
+				"single quotes": "John's Car",
+				"greater-than": "John > Car"
+			}, function(value, title) {
+				it(`must not escape ${title} in attribute`, function() {
+					var xml = new Hugml().stringify({person: {name: value}})
 
-				xml.must.eql(outdent`
-					<?xml version="1.0" encoding="UTF-8" ?>
-					<person name="John 'Doe' Smith" />
-				`)
-			})
-
-			it("must not replace \">\" in attributes", function() {
-				var xml = new Hugml().stringify({person: {name: "John > Doe"}})
-
-				xml.must.eql(outdent`
-					<?xml version="1.0" encoding="UTF-8" ?>
-					<person name="John > Doe" />
-				`)
+					xml.must.eql(outdent`
+						<?xml version="1.0" encoding="UTF-8" ?>
+						<person name="${value}" />
+					`)
+				})
 			})
 		})
 
